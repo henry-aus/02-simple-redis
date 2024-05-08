@@ -1,5 +1,6 @@
 mod hmap;
 mod map;
+mod sset;
 
 use crate::{Backend, RespArray, RespError, RespFrame, SimpleString};
 use enum_dispatch::enum_dispatch;
@@ -39,6 +40,9 @@ pub enum Command {
     HSet(HSet),
     HGetAll(HGetAll),
     HMGet(HMGet),
+
+    SAdd(SAdd),
+    SIsMember(SIsMember),
 
     // unrecognized command
     Unrecognized(Unrecognized),
@@ -86,6 +90,18 @@ pub struct HMGet {
 }
 
 #[derive(Debug)]
+pub struct SAdd {
+    key: String,
+    values: Vec<RespFrame>,
+}
+
+#[derive(Debug)]
+pub struct SIsMember {
+    key: String,
+    value: RespFrame,
+}
+
+#[derive(Debug)]
 pub struct Unrecognized;
 
 impl TryFrom<RespFrame> for Command {
@@ -105,13 +121,15 @@ impl TryFrom<RespArray> for Command {
     fn try_from(v: RespArray) -> Result<Self, Self::Error> {
         match v.first() {
             Some(RespFrame::BulkString(ref cmd)) => match cmd.as_ref() {
-                b"echo" => Ok(Echo::try_from(v)?.into()),
                 b"get" => Ok(Get::try_from(v)?.into()),
                 b"set" => Ok(Set::try_from(v)?.into()),
                 b"hget" => Ok(HGet::try_from(v)?.into()),
                 b"hset" => Ok(HSet::try_from(v)?.into()),
                 b"hgetall" => Ok(HGetAll::try_from(v)?.into()),
+                b"echo" => Ok(Echo::try_from(v)?.into()),
                 b"hmget" => Ok(HMGet::try_from(v)?.into()),
+                b"sadd" => Ok(SAdd::try_from(v)?.into()),
+                b"sismember" => Ok(SIsMember::try_from(v)?.into()),
                 _ => Ok(Unrecognized.into()),
             },
             _ => Err(CommandError::InvalidCommand(

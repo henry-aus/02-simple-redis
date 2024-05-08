@@ -10,6 +10,8 @@ pub struct Backend(Arc<BackendInner>);
 pub struct BackendInner {
     pub(crate) map: DashMap<String, RespFrame>,
     pub(crate) hmap: DashMap<String, DashMap<String, RespFrame>>,
+    //todo: Change RespFrame to impl Eq + Hash to use HashSet. Now it's Vec<RespFrame>
+    pub(crate) sset: DashMap<String, Vec<RespFrame>>,
 }
 
 impl Deref for Backend {
@@ -31,6 +33,7 @@ impl Default for BackendInner {
         Self {
             map: DashMap::new(),
             hmap: DashMap::new(),
+            sset: DashMap::new(),
         }
     }
 }
@@ -61,5 +64,14 @@ impl Backend {
 
     pub fn hgetall(&self, key: &str) -> Option<DashMap<String, RespFrame>> {
         self.hmap.get(key).map(|v| v.clone())
+    }
+
+    pub fn sget(&self, key: &str) -> Option<Vec<RespFrame>> {
+        self.sset.get(key).map(|v| v.clone())
+    }
+
+    pub fn sset(&self, key: String, values: Vec<RespFrame>) {
+        let mut sset = self.sset.entry(key).or_default();
+        sset.extend(values);
     }
 }
