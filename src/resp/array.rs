@@ -39,7 +39,7 @@ impl RespDecode for RespArray {
 
         buf.advance(end + CRLF_LEN);
 
-        let mut frames = Vec::with_capacity(len);
+        let mut frames = Vec::with_capacity(len as usize);
         for _ in 0..len {
             frames.push(RespFrame::decode(buf)?);
         }
